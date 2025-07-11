@@ -1,2 +1,2 @@
 # Cypher of Caesar
-ukrainian and english Caesar cypher(one way only as for now)
+ukrainian and english Caesar cypher in JavaScript(one way only as for now)
