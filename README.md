@@ -1,2 +1,2 @@
-# caesarCypher
-ukrainian and english Caesar cypher coder(one way only as for now)
+# Cypher of Caesar
+ukrainian and english Caesar cypher(one way only as for now)
