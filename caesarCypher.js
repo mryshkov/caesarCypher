@@ -64,9 +64,9 @@ function Caesar(){
 	do{
 		alphabet = prompt("choose alphabet(ukr/eng)");
 
-		if (alphabet == "ukr"){
+		if (alphabet === "ukr"){
   			alphabet = ukrAlphabet;
-  		} else if(alphabet == "eng"){
+  		} else if(alphabet === "eng"){
   			alphabet = engAlphabet;
   		} else if (alphabet == null) {
   			return 0;
@@ -74,7 +74,7 @@ function Caesar(){
   			alert("specify the correct alphabet(ukr/eng)");
   		}
 	} while(!Array.isArray(alphabet));
-	if (mode == "c"){
+	if (mode === "c"){
 		message = prompt("enter original message");
 	}
 	else{
@@ -90,7 +90,7 @@ function Caesar(){
   		}
 		} while(offset > 33);
   	
-		if (mode == "c"){
+		if (mode === "c"){
 			messageArr.forEach((e) => {
   			for (let i = 0; i <= alphabet.length; i++){
   				if (e === " "){
@@ -119,13 +119,12 @@ function Caesar(){
  				}
 
  				if (e === alphabet[i]){
- 					if (alphabet.length == engAlphabet.length){
- 						output += alphabet[26+i-offset];
- 						break;
- 					} else {
+ 					if (alphabet.length !== engAlphabet.length){
  						output += alphabet[33+i-offset];
-	  					break;
+ 						break;
  					}
+					output += alphabet[26+i-offset];
+					break;
 				}	
   			}
   		})
