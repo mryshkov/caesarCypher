@@ -1,6 +1,8 @@
+require("dotenv").config();
+
 const TelegramApi = require("node-telegram-bot-api")
 
-const token = "8049662976:AAFjJCTiKX7AFRP1U9JKeLRXeTU2_DAQ_08"
+const token = process.env.BOT_TOKEN
 
 const bot = new TelegramApi(token, {polling: true});
 
@@ -9,11 +11,13 @@ const phrases = {
         unrecognised: "Ви ввели щось незрозуміле",
         selectLang: "Спочатку оберіть мову!",
         selectCorrectLang: "Оберіть корректний варіант(анг/укр):",
+        langChosen: "Ви обрали українську мову як мову спілкування. Напишіть /changeLang для зміни мови"
     },
     eng: {
         unrecognised: "You have entered something incorrect",
         selectLang: "Choose the language first!",
         selectCorrectLang: "Choose the correct possible language(eng/ukr):",
+        langChosen: "You have chosen English as your primary language. Type /changeLang to change language"
     }
 }
 
@@ -39,27 +43,24 @@ async function start(){
     bot.on("message", async msg => {
         const chatId = msg.chat.id;
         const text = msg.text;
-
+        const state = userStates.get(chatId);
         console.log(msg);
 
+        //
         if (text === "/start") return;
 
-        const state = userStates.get(chatId);
-
-        if (state === "waiting_for_message") {
+        while (state === "waiting_for_message") {
             if (text === "ukr" || text === "укр"){
                 language = "ukr";
-                return bot.sendMessage(chatId, phrases[language].langChoosen);
+                userStates.delete(chatId);
+                return bot.sendMessage(chatId, phrases[language].langChosen);
             } else if (text === "eng" || text === "анг"){
                 language = "eng";
-                return bot.sendMessage(chatId, phrases[language].langChoosen);
+                userStates.delete(chatId);
+                return bot.sendMessage(chatId, phrases[language].langChosen);
             } else {
                 return bot.sendMessage(chatId, phrases[language].selectCorrectLang);
             }
-
-            userStates.delete(chatId);
-        } else {
-            return bot.sendMessage(chatId, phrases[language].selectLang);
         }
 
         return bot.sendMessage(chatId, phrases[language].unrecognised);
