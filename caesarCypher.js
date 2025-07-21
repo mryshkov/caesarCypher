@@ -18,7 +18,6 @@
 //
 */
 
-
 function Caesar(){
 	let alphabet, offset, output = "", message, messageArr, mode;
 
