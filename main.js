@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const TelegramApi = require("node-telegram-bot-api");
+const TelegramApi = require("node-telegram-bot-api")
 
 const token = process.env.BOT_TOKEN;
 
@@ -9,104 +9,146 @@ const bot = new TelegramApi(token, {polling: {
         params: { timeout: 10 }
     }});
 
+let language = "ukr";
+
 const phrases = {
     ukr: {
 
         // commands
-        startDescription: "Почати з нуля",
-        changeLangDescription: "Змінити мову",
+        start_description: "Почати з нуля",
+        change_lang_description: "Змінити мову",
 
         // bot messages
-        langSelection: "Оберіть мову для спілкування",
+        lang_selection: "Оберіть мову для спілкування",
         unrecognised: "Ви ввели щось незрозуміле",
-        selectLang: "Спочатку оберіть мову!",
-        selectCorrectLang: "Оберіть корректний варіант(анг/укр):",
-        langChosen: "Ви обрали українську мову як мову спілкування. Напишіть /changeLang для зміни мови"
+        select_lang: "Спочатку оберіть мову!",
+        select_correct_lang: "Оберіть корректний варіант(анг/укр):",
+        lang_chosen: "Ви обрали українську мову як мову спілкування. Напишіть /changeLang для зміни мови",
+        change_mode: "Ви хочете шифрувати, чи розшифрувати повідомлення?",
+        change_mode_description: "Змінити режим шифрування/розшифрування",
+        change_offset: "Оберіть зсув",
+        change_offset_description: "Обрати зсув",
+
+        // user messages
+        mode_code: ["шифрування", "шифрувати", "зашифрувати"],
+        mode_decode: ["розшифрування", "розшифрувати"],
     },
     eng: {
 
         // commands
-        startDescription: "Start from blank",
-        changeLangDescription: "Select the language",
+        start_description: "Start from blank",
+        change_lang_description: "Select the language",
 
         // bot messages
-        langSelection: "Select the language",
+        lang_selection: "Select the language",
         unrecognised: "You have entered something incorrect",
-        selectLang: "Choose the language first!",
-        selectCorrectLang: "Choose the correct possible language(eng/ukr):",
-        langChosen: "You have chosen English as your primary language. Type /changeLang to change language"
+        select_lang: "Choose the language first!",
+        select_correct_lang: "Choose the correct possible language(eng/ukr):",
+        lang_chosen: "You have chosen English as your primary language. Type /changeLang to change language",
+        change_mode: "Do you want to code or to decode your message?",
+        change_mode_description: "Change code/decode mode",
+        change_offset: "Select the offset",
+        change_offset_description: "Change the offset",
+
+        // user messages
+        mode_code: ["code", "coding"],
+        mode_decode: ["decode", "decoding"],
     }
 }
 
-let language = "ukr";
+const commands = [
+    {command: "/start", description: phrases[language].start_description},
+    {command: "/language", description: phrases[language].change_lang_description},
+    {command: "/mode", description: phrases[language].change_mode_description},
+    {command: "/offset", description: phrases[language].change_offset_description},
+]
 
 const userStates = new Map();
 
 async function start(){
-    await bot.setMyCommands([
-        {command: "/start", description: phrases[language].startDescription},
-        {command: "/changelang", description: phrases[language].changeLangDescription}
-    ])
+    await bot.setMyCommands(commands)
 
 
-    bot.onText(/\/start/, async (msg) => {
+    bot.onText(/^\/start$|^\/language$|^language$/, async (msg) => {
         const chatId = msg.chat.id;
 
-        await bot.sendMessage(chatId, phrases[language].langSelection);
+        await bot.sendMessage(chatId, phrases[language].lang_selection);
 
-        userStates.set(chatId, "waiting_for_language_change");
+        userStates.set(chatId, "waiting_for_language_selection");
     })
 
-    bot.onText(/\/changelang/, async (msg) => {
+    bot.onText(/^\/mode$|^mode$/, async (msg) => {
         const chatId = msg.chat.id;
 
-        await bot.sendMessage(chatId, phrases[language].langSelection);
+        await bot.sendMessage(chatId, phrases[language].change_mode);
 
-        userStates.set(chatId, "waiting_for_language_change");
+        userStates.set(chatId, "waiting_for_mode");
+    })
+
+    bot.onText(/^\/offset$|^offset$/, async (msg) => {
+        const chatId = msg.chat.id;
+
+        await bot.sendMessage(chatId, phrases[language].change_offset);
+
+        userStates.set(chatId, "waiting_for_offset");
     })
 
     bot.on("message", async msg => {
         const chatId = msg.chat.id;
-        const text = msg.text;
-        const state = userStates.get(chatId);
+        const text   = msg.text;
+        const state  = userStates.get(chatId);
+        let   lastState;
+        let   mode;
         console.log(msg);
 
-        //
-        if (text === "/start"){
-            language = "ukr";
-            return;
-        } else if (text === "/changelang") return;
 
-        while (state === "waiting_for_language_change") {
+        if (text === "/start") {
+            lastState = null;
+            return;
+        } else if (text === "/language" || "/mode") return;
+
+        while (state === "waiting_for_language_selection") {
             if (text === "ukr" || text === "укр"){
                 language = "ukr";
 
-                bot.setMyCommands([
-                    {command: "/start", description: phrases[language].startDescription},
-                    {command: "/changelang", description: phrases[language].changeLangDescription}
-                ])
+                await bot.setMyCommands(commands);
 
-                userStates.delete(chatId);
+                userStates.set(chatId, lastState || "waiting_for_mode");
 
-                return bot.sendMessage(chatId, phrases[language].langChosen);
+                return bot.sendMessage(chatId, phrases[language].lang_chosen);
             } else if (text === "eng" || text === "анг"){
                 language = "eng";
 
-                bot.setMyCommands([
-                    {command: "/start", description: phrases[language].startDescription},
-                    {command: "/changelang", description: phrases[language].changeLangDescription}
-                ])
+                await bot.setMyCommands(commands);
 
-                userStates.delete(chatId);
+                userStates.set(chatId, lastState || "waiting_for_mode");
 
-                return bot.sendMessage(chatId, phrases[language].langChosen);
+                return bot.sendMessage(chatId, phrases[language].lang_chosen);
             } else {
-                return bot.sendMessage(chatId, phrases[language].selectCorrectLang);
+                return bot.sendMessage(chatId, phrases[language].select_correct_lang);
             }
         }
 
-        return bot.sendMessage(chatId, phrases[language].unrecognised);
+        while(state === "waiting_for_mode") {
+            await bot.sendMessage(chatId, phrases[language].change_mode);
 
+            if (phrases[language].mode_code.includes(text.toLowerCase())) {
+                mode = "code";
+
+                userStates.set(chatId, lastState || "waiting_for_offset");
+            } else if(phrases[language].mode_decode.includes(text.toLowerCase())) {
+                mode = "decode";
+
+                userStates.set(chatId, lastState || "waiting_for_offset");
+            } else return;
+        }
+
+       /* while(state === "waiting_for_offset") {
+            await bot.sendMessage(chatId, phrases[language].change_offset);
+
+        }*/
+
+        return bot.sendMessage(chatId, phrases[language].unrecognised);
 
     })
 }
