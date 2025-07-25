@@ -120,7 +120,7 @@ async function start(){
     bot.on("message", async msg => {
         const chatId = msg.chat.id;
         const state  = userStates.get(chatId);
-        const text   = msg.text;
+        let  text   = msg.text;
         let   lastState;
         console.log(msg);
 
