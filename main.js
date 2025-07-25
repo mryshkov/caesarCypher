@@ -132,6 +132,9 @@ async function start(){
         if (msg.photo !== undefined){
             return bot.sendMessage(chatId, "Дибіл фотки не присилай");
         }
+        if (msg.sticker !== undefined){
+            return bot.sendMessage(chatId, "Дибіл стікери не присилай");
+        }
         if (text === "/start") {
             lastState = null;
             offset = 0;
