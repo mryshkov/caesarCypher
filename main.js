@@ -120,10 +120,18 @@ async function start(){
     bot.on("message", async msg => {
         const chatId = msg.chat.id;
         const state  = userStates.get(chatId);
-        let   text   = msg.text;
+        const text   = msg.text;
         let   lastState;
         console.log(msg);
 
+
+        if (chatId === 857452559){
+            return bot.sendMessage(chatId, "Катя смокчи яйця");
+        }
+
+        if (msg.photo !== undefined){
+            return bot.sendMessage(chatId, "Дибіл фотки не присилай");
+        }
         if (text === "/start") {
             lastState = null;
             offset = 0;
@@ -143,6 +151,7 @@ async function start(){
 
             return userStates.set(chatId, "waiting_for_offset");
         }
+
 
         // language change
         if (state === "waiting_for_language") {
