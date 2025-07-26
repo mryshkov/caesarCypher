@@ -9,7 +9,7 @@ const bot = new TelegramApi(token, {polling: {
         params: { timeout: 10 }
     }});
 
-let language = "ukr", offset, mode, message;
+let language = "ukr", offset, mode;
 
 const phrases = {
     ukr: {
@@ -128,58 +128,54 @@ async function start(){
             return bot.sendMessage(chatId, "Катя смокчи яйця");
         }
 
-        if (msg.photo !== undefined || msg.sticker !== undefined || msg.video !== undefined) {
-            return bot.sendMessage(chatId, "Дибіл хєрньою не займайся");
-        }
-        if (text === "/start") {
-            lastState = null;
-            offset = 0;
-        }
-        if (text === "/language" || text === "/start") {
-            await bot.sendMessage(chatId, phrases[language].lang_selection);
-
-            return userStates.set(chatId, "waiting_for_language");
-        } else if (text === "/mode") {
-            await bot.sendMessage(chatId, phrases[language].change_mode);
-
-            return userStates.set(chatId, "waiting_for_mode");
-        } else if (text === "/offset") {
-            await bot.sendMessage(chatId, phrases[language].change_offset);
-
-            return userStates.set(chatId, "waiting_for_offset");
-        }
-
-
-        // language change
-        if (state === "waiting_for_language") {
-            text = text.toLowerCase();
-            if (text === "ukr" || text === "укр"){
-                language = "ukr";
-            } else if (text === "eng" || text === "анг") {
-                language = "eng";
-            } else {
-                lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_language";
-                return bot.sendMessage(chatId, phrases[language].select_correct_lang);
+        if (text !== undefined) {
+            if (text === "/start") {
+                lastState = null;
+                offset = 0;
             }
-            await bot.setMyCommands(commands);
+            if (text === "/language" || text === "/start") {
+                await bot.sendMessage(chatId, phrases[language].lang_selection);
 
-            lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_language";
-            console.log(lastState)
-            userStates.set(chatId, lastState === "waiting_for_message" ? lastState : "waiting_for_mode");
+                return userStates.set(chatId, "waiting_for_language");
+            } else if (text === "/mode") {
+                await bot.sendMessage(chatId, phrases[language].change_mode);
 
-            return bot.sendMessage(chatId, phrases[language].lang_chosen + "\n" + (lastState === "waiting_for_message" ? phrases[language].waiting_for_message() : phrases[language].change_mode));
-        }
+                return userStates.set(chatId, "waiting_for_mode");
+            } else if (text === "/offset") {
+                await bot.sendMessage(chatId, phrases[language].change_offset);
 
-        // mode change
-        if (state === "waiting_for_mode") {
+                return userStates.set(chatId, "waiting_for_offset");
+            }
+
+
+            // language change
+            if (state === "waiting_for_language") {
+                text = text.toLowerCase();
+                if (text === "ukr" || text === "укр"){
+                    language = "ukr";
+                } else if (text === "eng" || text === "анг") {
+                    language = "eng";
+                } else {
+                    lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_language";
+                    return bot.sendMessage(chatId, phrases[language].select_correct_lang);
+                }
+                await bot.setMyCommands(commands);
+
+                lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_language";
+                console.log(lastState)
+                userStates.set(chatId, lastState === "waiting_for_message" ? lastState : "waiting_for_mode");
+
+                return bot.sendMessage(chatId, phrases[language].lang_chosen + "\n" + (lastState === "waiting_for_message" ? phrases[language].waiting_for_message() : phrases[language].change_mode));
+            }
+
+            // mode change
+            if (state === "waiting_for_mode") {
                 if (phrases[language].mode_code.includes(text.toLowerCase())) {
                     mode = "code";
 
                     await bot.sendMessage(chatId, phrases[language].mode_chosen() + "\n\n" + (lastState === "waiting_for_offset" ? phrases[language].waiting_for_message() : phrases[language].change_offset));
 
-                    console.log(lastState);
                     lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_mode";
-                    console.log(lastState);
                     return userStates.set(chatId, lastState === "waiting_for_message" ? lastState : "waiting_for_offset");
                 } else if(phrases[language].mode_decode.includes(text.toLowerCase())) {
                     mode = "decode";
@@ -196,94 +192,110 @@ async function start(){
                     console.log(lastState);
                     return lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_mode";
                 }
-        }
-
-        // offset change
-        if (state === "waiting_for_offset") {
-            let parsedText = parseInt(text);
-            let maxOffset = language === "ukr" ? 33 : 26;
-
-            if (!isNaN(parsedText) && parsedText <= maxOffset) {
-                offset = parsedText;
-
-                await bot.sendMessage(chatId, phrases[language].offset_changed() + "\n" + phrases[language].waiting_for_message());
-
-                userStates.set(chatId, "waiting_for_message")
-                return lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_offset";
-            } else {
-                await bot.sendMessage(chatId, phrases[language].incorrect_offset);
-
-                return lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_offset";
             }
-        }
 
-        // message processing
-        if (state === "waiting_for_message") {
-            let output = "";
-            let messageArr = text.split("");
-            let alphabet = language === "ukr" ? ukrAlphabet : engAlphabet;
+            // offset change
+            if (state === "waiting_for_offset") {
+                let parsedText = parseInt(text);
+                let maxOffset = language === "ukr" ? 33 : 26;
 
-            if (mode === "code") {
-                messageArr.forEach((e) => {
-                    for (let i = 0; i <= alphabet.length; i++){
-                        if (e === " "){
-                            output += " ";
-                            break;
-                        } else if(e === ","){
-                            output += ",";
-                            break;
-                        } else if(e === "?"){
-                            output += "?";
-                        } else if(e === "!"){
-                            output += "!"
-                        } else if(e === "."){
-                            output += ".";
-                        }
+                if (!isNaN(parsedText) && parsedText <= maxOffset && parsedText >= 1) {
+                    offset = parsedText;
 
-                        if (e === alphabet[i]){
-                            output += alphabet[i+offset];
-                            break;
-                        }
-                    }
-                })
-            } else {
-                messageArr.forEach((e) => {
-                    for (let i = 0; i <= alphabet.length; i++){
-                        if (e === " "){
-                            output += " ";
-                            break;
-                        } else if(e === ","){
-                            output += ",";
-                            break;
-                        } else if(e === "?"){
-                            output += "?";
-                        } else if(e === "!"){
-                            output += "!"
-                        } else if(e === "."){
-                            output += ".";
-                        }
+                    await bot.sendMessage(chatId, phrases[language].offset_changed() + "\n" + (lastState === "waiting_for_message" ? phrases[language].waiting_for_message() : lastState === "waiting_for_language" ? phrases[language].select_lang : phrases[language].change_mode));
 
-                        if (e === alphabet[i]){
-                            if (alphabet.length !== engAlphabet.length){
-                                output += alphabet[33+i-offset];
+                    userStates.set(chatId, lastState !== "waiting_for_message" ? lastState : "waiting_for_message")  // coming back to last state, if not waiting_for_message
+                    return lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_offset";
+                } else {
+                    await bot.sendMessage(chatId, phrases[language].incorrect_offset);
+
+                    return lastState = lastState === "waiting_for_message" ? lastState : "waiting_for_offset";
+                }
+            }
+
+            // message processing
+            if (state === "waiting_for_message") {
+                let output = "";
+                let messageArr = text.split("");
+                let alphabet = language === "ukr" ? ukrAlphabet : engAlphabet;
+
+                if (mode === "code") {
+                    messageArr.forEach((e) => {
+                        for (let i = 0; i <= alphabet.length; i++){
+                            if (e === " "){
+                                output += " ";
+                                break;
+                            } else if(e === ","){
+                                output += ",";
+                                break;
+                            } else if(e === "?"){
+                                output += "?";
+                                break;
+                            } else if(e === "!"){
+                                output += "!"
+                                break;
+                            } else if(e === "."){
+                                output += ".";
+                                break;
+                            } else if (!isNaN(e)){
+                                output += e;
                                 break;
                             }
-                            output += alphabet[26+i-offset];
-                            break;
+
+                            if (e === alphabet[i]){
+                                output += alphabet[i+offset];
+                                break;
+                            }
                         }
-                    }
-                })
+                    })
+                } else {
+                    messageArr.forEach((e) => {
+                        for (let i = 0; i <= alphabet.length; i++){
+                            if (e === " "){
+                                output += " ";
+                                break;
+                            } else if (e === ","){
+                                output += ",";
+                                break;
+                            } else if (e === "?"){
+                                output += "?";
+                                break;
+                            } else if (e === "!"){
+                                output += "!"
+                                break;
+                            } else if (e === "."){
+                                output += ".";
+                                break;
+                            } else if (!isNaN(e)){
+                                output += e;
+                                break;
+                            }
+
+                            if (e === alphabet[i]){
+                                if (alphabet.length !== engAlphabet.length){
+                                    output += alphabet[33+i-offset];
+                                    break;
+                                }
+                                output += alphabet[26+i-offset];
+                                break;
+                            }
+                        }
+                    })
+                }
+                if (output.length > 0) {
+                    await bot.sendMessage(chatId, output);
+
+                    await bot.sendMessage(chatId, phrases[language].send_next_message);
+
+                    userStates.set(chatId, "waiting_for_message");
+                    return lastState = userStates.get(chatId);
+                }
             }
-            await bot.sendMessage(chatId, output);
 
-            await bot.sendMessage(chatId, phrases[language].send_next_message);
-
-            userStates.set(chatId, "waiting_for_message");
-            return lastState = userStates.get(chatId);
+            return bot.sendMessage(chatId, phrases[language].unrecognised);
+        } else{
+            return bot.sendMessage(chatId, "Дибіл хєрньою не займайся");
         }
-
-        return bot.sendMessage(chatId, phrases[language].unrecognised);
-
     })
 }
 
