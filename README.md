@@ -1,2 +1,2 @@
 # Cypher of Caesar
-ukrainian and english Caesar cypher in JavaScript(working on telegram version too)
+ukrainian and english Caesar cypher on JavaScript(working on telegram version too)
